@@ -282,6 +282,86 @@ export async function fetchAgents(): Promise<AgentData[]> {
   });
 }
 
+// ---- Agency engine (real cloud LLM agents via Ollama Cloud) ----
+//
+// The agency engine is a separate layer from the agent control endpoints
+// above: /api/agents/* is the in-process agent state machine (pause/resume/
+// reset, status, metrics); /api/agency/* runs curated agency-agents personas
+// as REAL LLM calls against Ollama Cloud (glm-5.2 by default, 34 cloud models
+// available). The Agents page surfaces both — control dashboard + run console.
+
+export interface AgencyHealth {
+  reachable: boolean;
+  cloud: boolean;
+  ollama_url: string;
+  default_model: string;
+  models?: string[];
+  persona_count: number;
+  error?: string;
+}
+
+export interface AgencyPersona {
+  key: string;          // persona filename stem — the agent_key for /agency/run
+  name: string;
+  description: string;
+  color: string;
+  emoji: string;
+  tools: string;
+  slot: string | null;  // operational slot this persona maps to, if any
+}
+
+export interface AgencyRunResult {
+  agent: string;
+  name: string;
+  model?: string;
+  response?: string;
+  eval_count?: number;
+  took_ms?: number;
+  ollama_url?: string;
+  // Honest error fields (present when the run failed — Ollama offline,
+  // unknown agent, timeout, etc.). The backend never crashes on these.
+  error?: string;
+  available?: string[];
+  detail?: string;
+  timeout_s?: number;
+}
+
+export async function agencyHealth(): Promise<AgencyHealth> {
+  const r = await http<any>("/api/agency/health");
+  return (r?.data ?? r) as AgencyHealth;
+}
+
+export async function agencyRoster(): Promise<AgencyPersona[]> {
+  const r = await http<any>("/api/agency/roster");
+  const data = r?.data ?? r;
+  return Array.isArray(data) ? (data as AgencyPersona[]) : [];
+}
+
+/**
+ * Run a curated persona against a task on the cloud LLM. Uses a raw fetch
+ * (not http()) so we can surface the backend's honest error detail — e.g.
+ * "agent engine offline — Ollama not reachable" — even when success=false,
+ * instead of the generic "agent run failed" message http() would throw.
+ */
+export async function agencyRun(
+  agentKey: string,
+  task: string,
+  model?: string,
+): Promise<AgencyRunResult> {
+  const res = await fetch(`${API_BASE}/api/agency/run/${encodeURIComponent(agentKey)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ task, ...(model ? { model } : {}) }),
+  });
+  let body: any = null;
+  try {
+    body = await res.json();
+  } catch {
+    /* non-JSON response */
+  }
+  return (body?.data ?? body ?? {}) as AgencyRunResult;
+}
+
 // ---- Agent control (real backend: pause / resume / reset) ----
 
 export async function pauseAgent(agentId: string): Promise<void> {
