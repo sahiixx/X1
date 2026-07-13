@@ -53,18 +53,19 @@ export default function Home() {
     <PageLayout>
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-border">
-        {/* Layered backdrop: fading dot-grid + soft brand glow. */}
+        {/* Layered backdrop: fading dot-grid + scanlines + soft brand glow. */}
         <div className="pointer-events-none absolute inset-0 bg-grid bg-grid-fade opacity-70" />
+        <div className="pointer-events-none absolute inset-0 scanlines opacity-40" />
         <div className="pointer-events-none absolute inset-0 bg-glow" />
         <div className="relative container mx-auto px-4 lg:px-8 min-h-[80vh] flex flex-col justify-center py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <motion.div initial="hidden" animate="visible" variants={staggerVariants} className="space-y-7">
-              <motion.div variants={childVariants} className="inline-flex items-center gap-2 border border-border glass px-3 py-1 rounded-full text-xs font-medium text-muted-foreground">
+              <motion.div variants={childVariants} className="terminal-label inline-flex items-center gap-2 border border-border glass px-3 py-1 rounded-full text-xs text-muted-foreground">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.8)]" />
-                Dubai's AI-powered marketing agency
+                nowhere://agency — dubai
               </motion.div>
 
-              <motion.h1 variants={childVariants} className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight text-foreground">
+              <motion.h1 variants={childVariants} className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.08] text-foreground">
                 AI agents that run your <span className="text-gradient">marketing</span>, so you can run your business.
               </motion.h1>
 
@@ -89,7 +90,7 @@ export default function Home() {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="flex flex-col gap-4">
-              <Card title="Your AI workforce" subtitle="5 agents, always on" className="glass">
+              <Card title="Your AI workforce" subtitle="nowhere://workforce — 5 agents online" className="glass">
                 <div className="space-y-3">
                   {[
                     { icon: Bot, name: 'Sales Agent', task: 'Qualifying inbound leads' },

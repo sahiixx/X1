@@ -52,7 +52,7 @@ export function Navbar() {
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-brand text-primary-foreground shadow-sm">
               <Sparkles className="w-4 h-4" />
             </div>
-            <span className="font-semibold text-lg tracking-tight text-foreground">NOWHERE.ai</span>
+            <span className="font-display text-lg text-foreground text-glitch">NOWHERE.ai</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-7 text-sm">

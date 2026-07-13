@@ -30,7 +30,7 @@ export function Card({
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             {title && <h3 className="text-sm font-semibold text-foreground">{title}</h3>}
-            {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+            {subtitle && <p className="terminal-label text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
           </div>
         </div>
       )}
