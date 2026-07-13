@@ -17,7 +17,7 @@ The production stack: a **Vite + TS + wouter + React Query frontend** (this `now
 
 Two things you must handle before this is "live on the internet":
 
-1. **Dependencies / vulnerabilities.** As of 2026-07-13 the **backend Python vulns are remediated** (`pip-audit`: 17 → 7). Fixed: `starlette 0.37.2 → 1.3.1` (8 vulns, the criticals — via `fastapi 0.110.1 → 0.139.0`), `pymongo 4.5.0 → 4.6.3` (1 vuln), and `python-jose`/`ecdsa` removed entirely (ecdsa vuln eliminated — `python-jose` was unused; auth uses PyJWT/HS256). The **7 remaining are all `litellm 1.80.0`** and are **accepted with rationale**: `emergentintegrations 0.2.0` (the latest version of a private package) pins `openai==1.99.9`, but every litellm CVE-fix version (≥1.83) requires `openai>=2` — mutually exclusive, so litellm can't be upgraded without breaking emergentintegrations. litellm is only used transitively by the fallback `/api/ai/analyze-problem` endpoint (no real LLM key configured); the **cloud agency engine uses aiohttp directly and is unaffected**. Mitigation: replace emergentintegrations with direct OpenAI calls, or upgrade emergentintegrations when a newer release supports openai 2.x. GitHub's broader Dependabot count (122, incl. 2 critical/54 high) is dominated by the **legacy CRA `frontend/` npm tree** (superseded by the nowhere-ai frontend, not deployed) — review any remaining criticals before accepting real payments. The nowhere-ai frontend (this repo) has a small, current dep tree and no reported criticals.
+1. **Dependencies / vulnerabilities.** As of 2026-07-13 the **backend Python vulns are fully remediated** (`pip-audit`: 17 → 7 → **0**). Fixed: `starlette 0.37.2 → 1.3.1` (8 vulns, the criticals — via `fastapi 0.110.1 → 0.139.0`), `pymongo 4.5.0 → 4.6.3` (1 vuln), `python-jose`/`ecdsa` removed entirely (ecdsa vuln eliminated — `python-jose` was unused; auth uses PyJWT/HS256), and **`emergentintegrations` + `litellm` removed entirely** (the final 7 litellm CVEs — `emergentintegrations` was a private package that pinned `openai==1.99.9` and pulled `litellm` transitively; it's been replaced with direct calls to the official `openai` and `stripe` SDKs across `services/ai_service.py`, `services/ai_service_upgraded.py`, `integrations/vision_ai_integration.py`, `integrations/voice_ai_integration.py`, and `integrations/stripe_integration.py`). `pip-audit` now reports **"No known vulnerabilities found"**. GitHub's broader Dependabot count (122, incl. 2 critical/54 high) is dominated by the **legacy CRA `frontend/` npm tree** (superseded by the nowhere-ai frontend, not deployed) — review any remaining criticals before accepting real payments. The nowhere-ai frontend (this repo) has a small, current dep tree and no reported criticals.
 2. **Secrets.** The backend degrades gracefully without keys (returns fallback text / test-mode), so you can ship the marketing + agents + contact surface first. But real AI, real Stripe charges, real WhatsApp, and the cloud agency engine all need keys — see §5.
 
 ---
@@ -37,7 +37,7 @@ The frontend and backend are **independent** — deploy each, then point the fro
 
 ## 1. Backend → Render (Docker)
 
-`Fixfiz/backend/Dockerfile` is a multi-stage production image: installs `emergentintegrations` from the private cloudfront index (`--extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/`), runs `uvicorn server:app --host 0.0.0.0 --port 8001 --workers 4`, health-checks `/api/health`, runs as a non-root user.
+`Fixfiz/backend/Dockerfile` is a multi-stage production image: installs from PyPI only (the private `emergentintegrations` cloudfront index was removed 2026-07-13 — the backend now uses the official `openai` + `stripe` SDKs), runs `uvicorn server:app --host 0.0.0.0 --port 8001 --workers 4`, health-checks `/api/health`, runs as a non-root user.
 
 1. Render → **New → Web Service → Deploy from a Dockerfile repo** → connect `sahiixx/Fixfiz`. Root = `backend/`.
 2. Render auto-detects the Dockerfile. Port **8001** (the Dockerfile hardcodes it).
@@ -46,7 +46,7 @@ The frontend and backend are **independent** — deploy each, then point the fro
 
 **Railway / Fly.io alternative:** same Dockerfile. On Fly, `fly launch --dockerfile Fixfiz/backend/Dockerfile` then `fly deploy`; expose 8001. On Railway, connect the repo, set root to `backend/`.
 
-> ⚠️ **`emergentintegrations` is a private package** but installs fine on Linux containers (the `--extra-index-url` is HTTP-200 public). Don't deploy the backend to a host that can't reach `d33sy5i8bnduwe.cloudfront.net`.
+> ⚠️ **No private package index needed anymore.** `emergentintegrations` (and its `d33sy5i8bnduwe.cloudfront.net` index) was removed 2026-07-13 — the backend installs from public PyPI only, so it deploys to any standard container host.
 
 ---
 
@@ -102,7 +102,7 @@ Set these on the backend host (Render/Railway/Fly env UI). **Real keys only — 
 | `AGENCY_OLLAMA_URL` | ✅ for cloud agents | `https://ollama.com` (Ollama Cloud) |
 | `AGENCY_OLLAMA_API_KEY` | ✅ for cloud agents | Your Ollama Cloud key |
 | `AGENCY_OLLAMA_MODEL` | optional | Default `glm-5.2`; any of the 34 cloud models |
-| `EMERGENT_LLM_KEY` | ⚠️ for real AI solver | Default is a demo key — `/api/ai/analyze-problem` returns fallback text without a real one |
+| `EMERGENT_LLM_KEY` | ⚠️ for real AI solver | Legacy var name (the `emergentintegrations` package is gone) — now feeds the official `openai` SDK directly. Default is a demo key; `/api/ai/analyze-problem` and the AI endpoints return fallback text without a real one. Set a real OpenAI key (or `OPENAI_API_KEY`) to light up genuine analysis. |
 | `STRIPE_API_KEY` + `STRIPE_WEBHOOK_SECRET` | for payments | Stripe secret + webhook secret (the `/api/integrations/payments/webhook` endpoint exists) |
 | `TWILIO_ACCOUNT_SID` / `AUTH_TOKEN` / `VERIFY_SERVICE` / `PHONE_NUMBER` / `WHATSAPP_NUMBER` | for WhatsApp/SMS | `/api/leads` dispatches WhatsApp follow-up with these |
 | `SENDGRID_API_KEY` | for email | Contact/lead email notifications |
@@ -175,7 +175,7 @@ End-to-end checks on the deployed site: sign up → log in → `/dashboard` rend
 
 ## Honest gaps before this is "a real product"
 
-1. **Dependabot vulnerabilities (2 critical, 54 high on Fixfiz).** Review before accepting real payments. See ⚠️ at top.
+1. **Dependabot vulnerabilities (2 critical, 54 high on Fixfiz).** These are in the **legacy CRA `frontend/` npm tree** (superseded by the nowhere-ai frontend, not deployed). The **backend Python tree is clean** — `pip-audit` reports 0 vulns after the 2026-07-13 remediation. Review the npm criticals before accepting real payments. See ⚠️ at top.
 2. **Plugin marketplace is fictional.** The 12 plugins are static; install does nothing. Remove the page or build the marketplace.
 3. **Agents are in-memory.** Agent state/metrics reset on backend restart. Real persistence is a later backend task.
 4. **No analytics attribution yet.** `/api/analytics/summary` returns near-zero until real traffic hits the contact/chat endpoints — correct, not a bug.
