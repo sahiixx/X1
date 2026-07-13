@@ -1,0 +1,4 @@
+# Cloudflare Pages SPA fallback — wouter uses history routing, so every
+# client-side path must serve index.html (a 200 rewrite, not a 301).
+# Vite copies public/ into dist/ at build time, so this ships with the bundle.
+/*    /index.html   200
