@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* Dark-first design system (Linear / Vercel aesthetic).
+   The app is dark everywhere; no .dark class toggle is needed. */
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Dark premium palette — near-black, cool-tinted, fine low-contrast borders,
+   near-white text, a single violet accent. */
+:root {
+  --background: 240 6% 5%;
+  --foreground: 210 20% 98%;
+  --card: 240 6% 7.5%;
+  --card-foreground: 210 20% 98%;
+  --popover: 240 6% 7%;
+  --popover-foreground: 210 20% 98%;
+  --primary: 243 70% 66%;            /* violet accent */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 11%;
+  --secondary-foreground: 210 20% 98%;
+  --muted: 240 5% 11%;
+  --muted-foreground: 240 5% 62%;
+  --accent: 243 40% 18%;
+  --accent-foreground: 243 80% 80%;
+  --destructive: 0 70% 56%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 5% 15%;              /* fine, low-contrast */
+  --input: 240 5% 15%;
+  --ring: 243 70% 66%;
+  --radius: 0.75rem;
+
+  /* Brand gradient (violet → indigo → sky) for hero accents, badges, CTAs. */
+  --gradient-brand: linear-gradient(135deg, hsl(243 75% 68%) 0%, hsl(275 70% 70%) 50%, hsl(217 90% 72%) 100%);
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.028em;
+    font-weight: 600;
+  }
+  /* Subtle, premium selection. */
+  ::selection {
+    background: hsl(var(--primary) / 0.28);
+    color: hsl(var(--foreground));
+  }
+  /* Refined dark scrollbar. */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 999px; border: 2px solid hsl(var(--background)); }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+}
+
+@layer utilities {
+  /* Fine dotted grid — Vercel/Linear hero texture. */
+  .bg-grid {
+    background-image: radial-gradient(hsl(var(--border) / 0.6) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  /* Dotted grid that fades out toward the bottom (hero only). */
+  .bg-grid-fade {
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 75%);
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 75%);
+  }
+  /* Soft radial brand glow for hero backgrounds. */
+  .bg-glow {
+    background-image: radial-gradient(60% 60% at 50% 0%, hsl(var(--primary) / 0.18) 0%, transparent 70%);
+  }
+  /* Glassy translucent panel: backdrop blur + faint border + slight tint. */
+  .glass {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+  }
+  /* Brand-gradient text. */
+  .text-gradient {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Brand-gradient surface (buttons, badges, borders). */
+  .bg-brand {
+    background: var(--gradient-brand);
+  }
+  /* Hairline border that reads as a soft top highlight on dark cards. */
+  .border-hairline {
+    box-shadow: inset 0 1px 0 0 hsl(var(--foreground) / 0.04);
+  }
+}
