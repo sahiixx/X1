@@ -1,0 +1,54 @@
+# Cloudflare Pages — build + runtime config for NOWHERE.ai.
+#
+# Pages reads this only when deployed via `wrangler pages deploy` (manual).
+# The dashboard-based Pages deploy reads its config from the Cloudflare UI
+# (Build command, Build output directory, Environment variables). Both
+# routes produce the same result.
+#
+# The CRITICAL setting that has to be set in BOTH the UI and this file
+# is VITE_API_URL — it is read at BUILD TIME by Vite and baked into the
+# bundle. Once the backend is live, set it to the Render URL BEFORE the
+# first build (e.g. https://nowhere-ai-api.onrender.com), then rebuild.
+
+name = "nowhere-ai"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-07-14"
+
+[build]
+  command = "npm run build"
+  # `npm run build` already produces dist/. This field is informational
+  # for the CLI deploy path; the Pages UI reads its own "Build output
+  # directory" field — set BOTH to "dist" for consistency.
+
+# Build-time environment variables (Vite reads only VITE_-prefixed vars).
+# These are baked into the JS bundle at build time — they are PUBLIC to
+# anyone who loads the site. Only put the BACKEND BASE URL here (not
+# secrets). The JWT / Stripe / Twilio / Ollama keys live on the backend
+# only and never reach the browser.
+[vars]
+  VITE_API_URL = "http://localhost:8001"   # ← CHANGE TO YOUR RENDER URL BEFORE FIRST BUILD
+
+# SPA history fallback — wouter uses pushState routing, so /pricing etc.
+# need to fall back to index.html on refresh. Public/_redirects handles
+# this for the Pages hosting path:
+#   /api/*      https://<your-render-url>    200
+#   /*          /index.html                   200
+#
+# See public/_redirects in this repo.
+
+# Cache headers for the static SPA. Pages applies these to dist/_headers
+# automatically. See public/_headers.
+
+# --- Manual deploy (one-off) ---
+# 1. npm run build (with VITE_API_URL set to your Render URL in the
+#    parent shell: `set VITE_API_URL=https://...` on Windows, or
+#    `VITE_API_URL=https://... npm run build`).
+# 2. npx wrangler pages deploy dist --project-name=nowhere-ai
+#    (wrangler reads CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID from
+#    the env; you do not have these — use the dashboard instead).
+#
+# --- Dashboard deploy (the path you'll actually use) ---
+# Cloudflare Pages → "Create a project" → "Connect to Git" → pick
+# sahiixx/X1 → build command: `npm run build` → output dir: `dist`.
+# Then "Environment variables" → add VITE_API_URL with the Render URL.
+# Push to main → auto-deploys.
